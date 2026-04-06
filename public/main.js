@@ -18,14 +18,6 @@ enablePushButton.addEventListener('click', async () => {
 });
 
 window.addEventListener('load', async () => {
-  // On iOS, push only works from a Home Screen install - show the install banner
-  // and hide the push button until the app is running in standalone mode.
-  // Android Chrome supports push from the browser tab, so no restriction needed.
-  if (isIOS() && !isStandalone()) {
-    document.querySelector('#installBanner').hidden = false;
-    enablePushButton.hidden = true;
-  }
-
   try {
     await registerServiceWorker();
   } catch {
