@@ -1,0 +1,16 @@
+{
+  "name": "athan-pwa",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node server/index.js",
+    "start": "NODE_ENV=production node server/index.js"
+  },
+  "dependencies": {
+    "cheerio": "^1.1.2",
+    "express": "^4.21.2",
+    "node-cron": "^4.2.1",
+    "web-push": "^3.6.7"
+  }
+}

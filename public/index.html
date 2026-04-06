@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#6b4f2a">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="icon" href="/icon-192.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/styles.css">
+    <title>Vancouver Athan</title>
+  </head>
+  <body>
+    <main>
+      <section class="hero">
+        <p class="kicker">Installed PWA</p>
+        <h1>Vancouver Athan</h1>
+        <p class="subtitle">Side-by-side prayer times from BCMA and MAC Vancouver, with push notifications based on the earlier Athan for each prayer.</p>
+        <div class="toolbar">
+          <button id="enablePush" class="primary">Enable Notifications</button>
+          <button id="refreshTimes" class="secondary">Refresh Times</button>
+          <span id="status" class="muted">Loading…</span>
+        </div>
+      </section>
+
+      <section class="grid-card" id="tableCard" aria-live="polite"></section>
+      <div class="footer-note" id="lastRefreshed"></div>
+    </main>
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>
