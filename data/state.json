@@ -172,5 +172,8 @@
       }
     ]
   },
-  "sentNotificationIds": []
+  "sentNotificationIds": [
+    "2026-04-06:Fajr:before",
+    "2026-04-06:Fajr:at"
+  ]
 }
