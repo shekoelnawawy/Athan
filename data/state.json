@@ -1,187 +1,176 @@
 {
   "schedule": {
-    "dateKey": "2026-04-05",
-    "lastRefreshedAt": "2026-04-06T06:02:12.242Z",
+    "dateKey": "2026-04-06",
+    "lastRefreshedAt": "2026-04-06T08:46:00.452Z",
     "prayers": [
       {
         "prayer": "Fajr",
         "bcma": {
           "source": "BCMA",
-          "time": "2026-04-05T11:45:00.000Z",
-          "label": "4:45 AM"
+          "time": "2026-04-06T11:42:00.000Z",
+          "label": "4:42 AM"
         },
         "mac": {
           "source": "MAC",
-          "time": "2026-04-05T11:58:00.000Z",
-          "label": "4:58 AM"
+          "time": "2026-04-06T11:56:00.000Z",
+          "label": "4:56 AM"
         },
         "winningSource": "BCMA",
-        "winningTime": "2026-04-05T11:45:00.000Z"
+        "winningTime": "2026-04-06T11:42:00.000Z"
       },
       {
         "prayer": "Zuhr",
         "bcma": {
           "source": "BCMA",
-          "time": "2026-04-05T20:24:00.000Z",
+          "time": "2026-04-06T20:24:00.000Z",
           "label": "1:24 PM"
         },
         "mac": {
           "source": "MAC",
-          "time": "2026-04-05T20:17:00.000Z",
+          "time": "2026-04-06T20:17:00.000Z",
           "label": "1:17 PM"
         },
         "winningSource": "MAC",
-        "winningTime": "2026-04-05T20:17:00.000Z"
+        "winningTime": "2026-04-06T20:17:00.000Z"
       },
       {
         "prayer": "Asr",
         "bcma": {
           "source": "BCMA",
-          "time": "2026-04-06T00:48:00.000Z",
-          "label": "5:48 PM"
+          "time": "2026-04-07T00:50:00.000Z",
+          "label": "5:50 PM"
         },
         "mac": {
           "source": "MAC",
-          "time": "2026-04-05T23:55:00.000Z",
+          "time": "2026-04-06T23:55:00.000Z",
           "label": "4:55 PM"
         },
         "winningSource": "MAC",
-        "winningTime": "2026-04-05T23:55:00.000Z"
+        "winningTime": "2026-04-06T23:55:00.000Z"
       },
       {
         "prayer": "Maghrib",
         "bcma": {
           "source": "BCMA",
-          "time": "2026-04-06T02:58:00.000Z",
-          "label": "7:58 PM"
+          "time": "2026-04-07T02:59:00.000Z",
+          "label": "7:59 PM"
         },
         "mac": {
           "source": "MAC",
-          "time": "2026-04-06T02:51:00.000Z",
-          "label": "7:51 PM"
+          "time": "2026-04-07T02:53:00.000Z",
+          "label": "7:53 PM"
         },
         "winningSource": "MAC",
-        "winningTime": "2026-04-06T02:51:00.000Z"
+        "winningTime": "2026-04-07T02:53:00.000Z"
       },
       {
         "prayer": "Isha",
         "bcma": {
           "source": "BCMA",
-          "time": "2026-04-06T04:23:00.000Z",
-          "label": "9:23 PM"
+          "time": "2026-04-07T04:24:00.000Z",
+          "label": "9:24 PM"
         },
         "mac": {
           "source": "MAC",
-          "time": "2026-04-06T04:26:00.000Z",
-          "label": "9:26 PM"
+          "time": "2026-04-07T04:28:00.000Z",
+          "label": "9:28 PM"
         },
         "winningSource": "BCMA",
-        "winningTime": "2026-04-06T04:23:00.000Z"
+        "winningTime": "2026-04-07T04:24:00.000Z"
       }
     ],
     "notifications": [
       {
-        "id": "2026-04-05:Fajr:before",
+        "id": "2026-04-06:Fajr:before",
         "prayer": "Fajr",
         "kind": "before",
         "source": "BCMA",
-        "scheduledFor": "2026-04-05T11:30:00.000Z",
+        "scheduledFor": "2026-04-06T11:27:00.000Z",
         "title": "Fajr Athan in 15 minutes",
         "body": "Earlier source today: BCMA"
       },
       {
-        "id": "2026-04-05:Fajr:at",
+        "id": "2026-04-06:Fajr:at",
         "prayer": "Fajr",
         "kind": "at",
         "source": "BCMA",
-        "scheduledFor": "2026-04-05T11:45:00.000Z",
+        "scheduledFor": "2026-04-06T11:42:00.000Z",
         "title": "Fajr Athan now",
         "body": "Earlier source today: BCMA"
       },
       {
-        "id": "2026-04-05:Zuhr:before",
+        "id": "2026-04-06:Zuhr:before",
         "prayer": "Zuhr",
         "kind": "before",
         "source": "MAC",
-        "scheduledFor": "2026-04-05T20:02:00.000Z",
+        "scheduledFor": "2026-04-06T20:02:00.000Z",
         "title": "Zuhr Athan in 15 minutes",
         "body": "Earlier source today: MAC"
       },
       {
-        "id": "2026-04-05:Zuhr:at",
+        "id": "2026-04-06:Zuhr:at",
         "prayer": "Zuhr",
         "kind": "at",
         "source": "MAC",
-        "scheduledFor": "2026-04-05T20:17:00.000Z",
+        "scheduledFor": "2026-04-06T20:17:00.000Z",
         "title": "Zuhr Athan now",
         "body": "Earlier source today: MAC"
       },
       {
-        "id": "2026-04-05:Asr:before",
+        "id": "2026-04-06:Asr:before",
         "prayer": "Asr",
         "kind": "before",
         "source": "MAC",
-        "scheduledFor": "2026-04-05T23:40:00.000Z",
+        "scheduledFor": "2026-04-06T23:40:00.000Z",
         "title": "Asr Athan in 15 minutes",
         "body": "Earlier source today: MAC"
       },
       {
-        "id": "2026-04-05:Asr:at",
+        "id": "2026-04-06:Asr:at",
         "prayer": "Asr",
         "kind": "at",
         "source": "MAC",
-        "scheduledFor": "2026-04-05T23:55:00.000Z",
+        "scheduledFor": "2026-04-06T23:55:00.000Z",
         "title": "Asr Athan now",
         "body": "Earlier source today: MAC"
       },
       {
-        "id": "2026-04-05:Maghrib:before",
+        "id": "2026-04-06:Maghrib:before",
         "prayer": "Maghrib",
         "kind": "before",
         "source": "MAC",
-        "scheduledFor": "2026-04-06T02:36:00.000Z",
+        "scheduledFor": "2026-04-07T02:38:00.000Z",
         "title": "Maghrib Athan in 15 minutes",
         "body": "Earlier source today: MAC"
       },
       {
-        "id": "2026-04-05:Maghrib:at",
+        "id": "2026-04-06:Maghrib:at",
         "prayer": "Maghrib",
         "kind": "at",
         "source": "MAC",
-        "scheduledFor": "2026-04-06T02:51:00.000Z",
+        "scheduledFor": "2026-04-07T02:53:00.000Z",
         "title": "Maghrib Athan now",
         "body": "Earlier source today: MAC"
       },
       {
-        "id": "2026-04-05:Isha:before",
+        "id": "2026-04-06:Isha:before",
         "prayer": "Isha",
         "kind": "before",
         "source": "BCMA",
-        "scheduledFor": "2026-04-06T04:08:00.000Z",
+        "scheduledFor": "2026-04-07T04:09:00.000Z",
         "title": "Isha Athan in 15 minutes",
         "body": "Earlier source today: BCMA"
       },
       {
-        "id": "2026-04-05:Isha:at",
+        "id": "2026-04-06:Isha:at",
         "prayer": "Isha",
         "kind": "at",
         "source": "BCMA",
-        "scheduledFor": "2026-04-06T04:23:00.000Z",
+        "scheduledFor": "2026-04-07T04:24:00.000Z",
         "title": "Isha Athan now",
         "body": "Earlier source today: BCMA"
       }
     ]
   },
-  "sentNotificationIds": [
-    "2026-04-05:Fajr:before",
-    "2026-04-05:Fajr:at",
-    "2026-04-05:Zuhr:before",
-    "2026-04-05:Zuhr:at",
-    "2026-04-05:Asr:before",
-    "2026-04-05:Asr:at",
-    "2026-04-05:Maghrib:before",
-    "2026-04-05:Maghrib:at",
-    "2026-04-05:Isha:before",
-    "2026-04-05:Isha:at"
-  ]
+  "sentNotificationIds": []
 }

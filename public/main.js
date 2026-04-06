@@ -18,6 +18,14 @@ enablePushButton.addEventListener('click', async () => {
 });
 
 window.addEventListener('load', async () => {
+  // On iOS, push only works from a Home Screen install - show the install banner
+  // and hide the push button until the app is running in standalone mode.
+  // Android Chrome supports push from the browser tab, so no restriction needed.
+  if (isIOS() && !isStandalone()) {
+    document.querySelector('#installBanner').hidden = false;
+    enablePushButton.hidden = true;
+  }
+
   try {
     await registerServiceWorker();
   } catch {
@@ -76,7 +84,7 @@ function renderTable(rows) {
 
 function formatCell(sourceRow, isWinner) {
   const label = sourceRow?.label || '--';
-  return `${label}${isWinner ? '<span class="winner">earlier</span>' : ''}`;
+  return `<span class="time-value">${label}</span>${isWinner ? '<span class="winner">earlier</span>' : ''}`;
 }
 
 function formatClock(isoString) {
@@ -94,9 +102,25 @@ async function registerServiceWorker() {
   await navigator.serviceWorker.register('/sw.js');
 }
 
+function isIOS() {
+  return /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+}
+
+function isStandalone() {
+  return window.navigator.standalone === true ||
+    window.matchMedia('(display-mode: standalone)').matches;
+}
+
 async function enableNotifications() {
+  if (isIOS() && !isStandalone()) {
+    throw new Error('Add to Home Screen first — tap Share → Add to Home Screen in Safari, then reopen');
+  }
+
   if (!('Notification' in window) || !('PushManager' in window)) {
-    throw new Error('Push notifications are not supported on this device');
+    throw new Error(isIOS()
+      ? 'Push notifications require iOS 16.4 or later'
+      : 'Push notifications are not supported in this browser'
+    );
   }
 
   const permission = await Notification.requestPermission();

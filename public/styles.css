@@ -42,14 +42,6 @@ main {
   border: 1px solid rgba(255, 255, 255, 0.45);
 }
 
-.kicker {
-  margin: 0 0 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.18em;
-  font-size: 0.75rem;
-  color: var(--brand);
-}
-
 h1 {
   margin: 0;
   font-size: clamp(2.4rem, 5vw, 4.4rem);
@@ -57,19 +49,12 @@ h1 {
   font-weight: 700;
 }
 
-.subtitle {
-  max-width: 42rem;
-  color: var(--muted);
-  font-size: 1rem;
-  line-height: 1.55;
-}
-
 .toolbar {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
   align-items: center;
-  margin-top: 18px;
+  margin-top: 14px;
 }
 
 button {
@@ -129,12 +114,20 @@ button {
 }
 
 .grid-cell.time {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   font-variant-numeric: tabular-nums;
 }
 
+.time-value {
+  min-width: 0;
+}
+
 .grid-cell .winner {
-  display: inline-block;
-  margin-left: 8px;
+  display: inline-flex;
+  margin-left: auto;
   padding: 2px 8px;
   border-radius: 999px;
   background: rgba(41, 79, 57, 0.1);
@@ -142,6 +135,23 @@ button {
   font-size: 0.68rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
+}
+
+.install-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(107, 79, 42, 0.1);
+  color: var(--brand);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.install-banner svg {
+  flex-shrink: 0;
 }
 
 .footer-note {
@@ -184,6 +194,10 @@ button {
     grid-template-columns: 1fr auto;
     gap: 6px 12px;
     align-items: baseline;
+  }
+
+  .grid-cell.time {
+    justify-content: flex-end;
   }
 
   .muted {
