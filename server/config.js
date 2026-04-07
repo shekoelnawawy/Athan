@@ -9,7 +9,7 @@ export const config = {
   port: Number(process.env.PORT || 3000),
   timeZone: 'America/Vancouver',
   bcmaUrl: 'https://org.thebcma.com/vancouver/',
-  macUrl: 'https://centres.macnet.ca/macvancouvercentre/',
+  macUrl: 'https://centres.macnet.ca/macvancouvercentre/prayer-times/',
   publicDir: path.join(rootDir, 'public'),
   dataDir,
   subscriptionsFile: path.join(dataDir, 'subscriptions.json'),

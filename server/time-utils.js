@@ -1,10 +1,13 @@
-export const prayers = ['Fajr', 'Zuhr', 'Asr', 'Maghrib', 'Isha'];
+export const prayers = ['Fajr', 'Sunrise', 'Zuhr', 'Asr', 'Maghrib', 'Isha'];
 
 export function normalizePrayerName(raw) {
   const value = String(raw || '').trim().toLowerCase();
   switch (value) {
     case 'fajr':
       return 'Fajr';
+    case 'sunrise':
+    case 'sun rise':
+      return 'Sunrise';
     case 'zuhr':
     case 'dhuhr':
     case 'dhur':
