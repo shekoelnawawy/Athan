@@ -10,6 +10,7 @@ export const config = {
   timeZone: 'America/Vancouver',
   bcmaUrl: 'https://org.thebcma.com/vancouver/',
   macUrl: 'https://centres.macnet.ca/macvancouvercentre/prayer-times/',
+  iqamaCalendarUrl: 'https://p190-caldav.icloud.com/published/2/MTkzNDk1ODgwMjE5MzQ5NcavEtxQGqGi6CF0CqH4Z9dieTrVgItyPzeeQLP2XdnEMwYCeWLHgYWUSnM082G9WApTclzQcpzMLlC2jEMyi-I',
   publicDir: path.join(rootDir, 'public'),
   dataDir,
   subscriptionsFile: path.join(dataDir, 'subscriptions.json'),

@@ -53,6 +53,7 @@ function renderTable(rows) {
         <div class="group"><div class="grid-cell prayer">${row.prayer}</div><div></div></div>
         <div class="group"><div class="grid-cell">BCMA</div><div class="grid-cell time">${formatCell(row.bcma, row.winningSource === 'BCMA')}</div></div>
         <div class="group"><div class="grid-cell">MAC</div><div class="grid-cell time">${formatCell(row.mac, row.winningSource === 'MAC')}</div></div>
+        <div class="group"><div class="grid-cell">Iqama</div><div class="grid-cell time">${formatCell(row.iqama, false)}</div></div>
       </div>
     `).join('');
     return;
@@ -63,10 +64,12 @@ function renderTable(rows) {
       <div class="grid-head">Prayer</div>
       <div class="grid-head">BCMA</div>
       <div class="grid-head">MAC</div>
+      <div class="grid-head">Iqama</div>
       ${rows.map((row) => `
         <div class="grid-cell prayer">${row.prayer}</div>
         <div class="grid-cell time">${formatCell(row.bcma, row.winningSource === 'BCMA')}</div>
         <div class="grid-cell time">${formatCell(row.mac, row.winningSource === 'MAC')}</div>
+        <div class="grid-cell time">${formatCell(row.iqama, false)}</div>
       `).join('')}
     </div>
   `;

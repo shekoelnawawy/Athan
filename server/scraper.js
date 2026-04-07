@@ -1,11 +1,13 @@
 import * as cheerio from 'cheerio';
 import { config } from './config.js';
+import { fetchIqamaTimes } from './iqama-calendar.js';
 import { formatDateKey, normalizePrayerName, prayers, zonedDateForTime } from './time-utils.js';
 
 export async function fetchPrayerSchedule(now = new Date()) {
   const dateKey = formatDateKey(now, config.timeZone);
   let bcmaTimes = {};
   let macTimes = {};
+  let iqamaTimes = {};
 
   try {
     const bcmaHtml = await fetchHtml(config.bcmaUrl);
@@ -27,11 +29,20 @@ export async function fetchPrayerSchedule(now = new Date()) {
     console.warn(`[scraper] MAC source unavailable: ${error.message}`);
   }
 
-  if (!hasAnyTimes(bcmaTimes) && !hasAnyTimes(macTimes)) {
-    throw new Error('Unable to load prayer times from both BCMA and MAC sources');
+  try {
+    iqamaTimes = await fetchIqamaTimes(now);
+    if (!hasAnyTimes(iqamaTimes)) {
+      throw new Error('Iqama calendar returned no rows');
+    }
+  } catch (error) {
+    console.warn(`[scraper] Iqama source unavailable: ${error.message}`);
   }
 
-  return buildSchedule(dateKey, bcmaTimes, macTimes);
+  if (!hasAnyTimes(bcmaTimes) && !hasAnyTimes(macTimes) && !hasAnyTimes(iqamaTimes)) {
+    throw new Error('Unable to load prayer times from BCMA, MAC, and Iqama sources');
+  }
+
+  return buildSchedule(dateKey, bcmaTimes, macTimes, iqamaTimes);
 }
 
 async function fetchMacMonthlyTimetableHtml(now) {
@@ -107,7 +118,7 @@ function parseMac(html, dateKey) {
     const mappedTimes = [
       ['Fajr', 2],
       ['Sunrise', 4],
-      ['Zuhr', 5],
+      ['Duhr', 5],
       ['Asr', 7],
       ['Maghrib', 9],
       ['Isha', 11]
@@ -189,10 +200,11 @@ function hasAnyTimes(values) {
   return Object.keys(values).length > 0;
 }
 
-function buildSchedule(dateKey, bcmaTimes, macTimes) {
+function buildSchedule(dateKey, bcmaTimes, macTimes, iqamaTimes) {
   const prayerRows = prayers.map((prayer) => {
     const bcma = bcmaTimes[prayer] ?? null;
     const mac = macTimes[prayer] ?? null;
+    const iqama = iqamaTimes[prayer] ?? null;
     const candidates = [bcma, mac].filter(Boolean);
     const winner = candidates.sort((left, right) => new Date(left.time) - new Date(right.time))[0] ?? null;
 
@@ -200,35 +212,16 @@ function buildSchedule(dateKey, bcmaTimes, macTimes) {
       prayer,
       bcma,
       mac,
+      iqama,
       winningSource: winner?.source ?? null,
       winningTime: winner?.time ?? null
     };
   });
 
   const notifications = prayerRows.flatMap((row) => {
-    if (!row.winningTime) return [];
-    const winningDate = new Date(row.winningTime);
-    const beforeDate = new Date(winningDate.getTime() - 15 * 60 * 1000);
-
     return [
-      {
-        id: `${dateKey}:${row.prayer}:before`,
-        prayer: row.prayer,
-        kind: 'before',
-        source: row.winningSource,
-        scheduledFor: beforeDate.toISOString(),
-        title: `${row.prayer} in 15 minutes`,
-        body: row.winningSource
-      },
-      {
-        id: `${dateKey}:${row.prayer}:at`,
-        prayer: row.prayer,
-        kind: 'at',
-        source: row.winningSource,
-        scheduledFor: winningDate.toISOString(),
-        title: `${row.prayer} now`,
-        body: row.winningSource
-      }
+      ...buildAthanNotifications(row, dateKey),
+      ...buildIqamaNotifications(row, dateKey)
     ];
   });
 
@@ -238,4 +231,66 @@ function buildSchedule(dateKey, bcmaTimes, macTimes) {
     prayers: prayerRows,
     notifications
   };
+}
+
+function buildAthanNotifications(row, dateKey) {
+  if (!row.winningTime) return [];
+
+  const winningDate = new Date(row.winningTime);
+  const beforeDate = new Date(winningDate.getTime() - 15 * 60 * 1000);
+  const title = row.prayer === 'Sunrise' ? 'Sunrise' : `${row.prayer} Athan`;
+  const sourceSuffix = row.winningSource ? ` · ${row.winningSource}` : '';
+
+  return [
+    {
+      id: `${dateKey}:${row.prayer}:athan:before`,
+      prayer: row.prayer,
+      kind: 'before',
+      eventType: 'athan',
+      source: row.winningSource,
+      scheduledFor: beforeDate.toISOString(),
+      title,
+      body: `In 15 Minutes${sourceSuffix}`
+    },
+    {
+      id: `${dateKey}:${row.prayer}:athan:at`,
+      prayer: row.prayer,
+      kind: 'at',
+      eventType: 'athan',
+      source: row.winningSource,
+      scheduledFor: winningDate.toISOString(),
+      title,
+      body: `Now${sourceSuffix}`
+    }
+  ];
+}
+
+function buildIqamaNotifications(row, dateKey) {
+  if (row.prayer === 'Sunrise' || !row.iqama?.time) return [];
+
+  const iqamaDate = new Date(row.iqama.time);
+  const beforeDate = new Date(iqamaDate.getTime() - 15 * 60 * 1000);
+
+  return [
+    {
+      id: `${dateKey}:${row.prayer}:iqama:before`,
+      prayer: row.prayer,
+      kind: 'before',
+      eventType: 'iqama',
+      source: 'Iqama',
+      scheduledFor: beforeDate.toISOString(),
+      title: `${row.prayer} Iqama`,
+      body: 'In 15 Minutes'
+    },
+    {
+      id: `${dateKey}:${row.prayer}:iqama:at`,
+      prayer: row.prayer,
+      kind: 'at',
+      eventType: 'iqama',
+      source: 'Iqama',
+      scheduledFor: iqamaDate.toISOString(),
+      title: `${row.prayer} Iqama`,
+      body: 'Now'
+    }
+  ];
 }

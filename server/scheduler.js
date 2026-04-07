@@ -47,6 +47,7 @@ export async function tick(now = new Date()) {
       title: notification.title,
       body: notification.body,
       prayer: notification.prayer,
+      eventType: notification.eventType,
       kind: notification.kind,
       scheduledFor: notification.scheduledFor
     });
