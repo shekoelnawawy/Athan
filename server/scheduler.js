@@ -33,9 +33,10 @@ export async function tick(now = new Date()) {
   }
 
   const sent = new Set(state.sentNotificationIds || []);
+  const GRACE_MS = 2 * 60 * 1000; // drop notifications more than 2 minutes late
   const due = state.schedule.notifications.filter((notification) => {
     const scheduled = new Date(notification.scheduledFor);
-    return scheduled <= now && !sent.has(notification.id);
+    return scheduled <= now && (now - scheduled) <= GRACE_MS && !sent.has(notification.id);
   });
 
   if (due.length === 0) {

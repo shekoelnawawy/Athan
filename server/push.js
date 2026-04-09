@@ -41,7 +41,7 @@ export async function sendPushToAll(payload) {
 
   await Promise.all(subscriptions.map(async (subscription) => {
     try {
-      await webpush.sendNotification(subscription, JSON.stringify(payload));
+      await webpush.sendNotification(subscription, JSON.stringify(payload), { TTL: 120 });
       survivors.push(subscription);
     } catch (error) {
       const statusCode = error?.statusCode;

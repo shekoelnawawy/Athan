@@ -13,6 +13,7 @@ self.addEventListener('push', (event) => {
     body: data.body || '',
     badge: '/icon-192.svg',
     icon: '/icon-192.svg',
+    timestamp: data.scheduledFor ? new Date(data.scheduledFor).getTime() : Date.now(),
     data
   };
 
