@@ -11,8 +11,8 @@ self.addEventListener('push', (event) => {
   const title = data.title || 'Athan Alert';
   const options = {
     body: data.body || '',
-    badge: '/icon-192.svg',
-    icon: '/icon-192.svg',
+    badge: '/mosque.png',
+    icon: '/mosque.png',
     timestamp: data.scheduledFor ? new Date(data.scheduledFor).getTime() : Date.now(),
     data
   };
