@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1242" height="2688" viewBox="0 0 1242 2688" role="img" aria-labelledby="title desc">
+  <title id="title">Vancouver Athan Launch Image</title>
+  <desc id="desc">Branded launch image with warm background, moon motif, and mosque silhouette.</desc>
+  <defs>
+    <radialGradient id="sky" cx="50%" cy="12%" r="72%">
+      <stop offset="0%" stop-color="#f6efe3"/>
+      <stop offset="100%" stop-color="#e6d4b8"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1242" height="2688" fill="url(#sky)"/>
+
+  <g transform="translate(621 1200)">
+    <circle cx="0" cy="0" r="360" fill="#6b4f2a" opacity="0.12"/>
+    <rect x="-280" y="-280" width="560" height="560" rx="110" fill="#6b4f2a"/>
+    <circle cx="0" cy="-36" r="130" fill="#f4d08d"/>
+    <path d="M-138 130c32-52 74-78 138-78s106 26 138 78" fill="none" stroke="#f6efe3" stroke-width="38" stroke-linecap="round"/>
+    <path d="M0 -182l30 58 64 9-47 42 11 64-58-29-58 29 11-64-47-42 64-9z" fill="#f6efe3"/>
+  </g>
+
+  <g fill="#6b4f2a" opacity="0.18">
+    <circle cx="206" cy="372" r="16"/>
+    <circle cx="1028" cy="438" r="12"/>
+    <circle cx="934" cy="240" r="9"/>
+    <circle cx="314" cy="518" r="8"/>
+  </g>
+</svg>
