@@ -147,6 +147,34 @@ fi
 
 CLOUDFLARED_SERVICE="${CLOUDFLARED_SERVICE:-cloudflared-ephemeral}"
 
+extract_quick_tunnel_url() {
+	# Only accept the URL printed inside the successful tunnel creation banner.
+	# Error messages can contain https://api.trycloudflare.com/tunnel.
+	sed -nE 's#.*\|[[:space:]]+(https://[A-Za-z0-9-]+\.trycloudflare\.com)[[:space:]]+\|[[:space:]]*$#\1#p' |
+		grep -vFx 'https://api.trycloudflare.com' | tail -n1
+}
+
+read_current_tunnel_journal() {
+	local invocation_id
+	invocation_id="$(${SUDO_CMD} systemctl show "${CLOUDFLARED_SERVICE}" --property=InvocationID --value)" || return 1
+	[ -n "${invocation_id}" ] || return 1
+	# Ignore addresses from previous service runs, including failed restarts.
+	${SUDO_CMD} journalctl -u "${CLOUDFLARED_SERVICE}" "_SYSTEMD_INVOCATION_ID=${invocation_id}" -n 200 --no-pager
+}
+
+wait_for_quick_tunnel_url() {
+	local attempt tunnel_url
+	for ((attempt = 0; attempt < 30; attempt++)); do
+		tunnel_url="$("$@" | extract_quick_tunnel_url)" || tunnel_url=""
+		if [ -n "${tunnel_url}" ]; then
+			printf '%s\n' "${tunnel_url}"
+			return 0
+		fi
+		sleep 1
+	done
+	return 1
+}
+
 create_cloudflared_systemd() {
 	if [ -z "${CLOUDFLARED_BIN}" ]; then
 		echo "cloudflared binary not available; cannot create systemd service." && return 1
@@ -174,16 +202,15 @@ EOF
 	echo "cloudflared service status:"
 	${SUDO_CMD} systemctl status ${CLOUDFLARED_SERVICE} --no-pager || true
 
-	# try to extract ephemeral URL from logs
-	sleep 2
-	TRY_URL="$(${SUDO_CMD} journalctl -u ${CLOUDFLARED_SERVICE} -n 200 --no-pager | grep -oE 'https://[A-Za-z0-9.-]+trycloudflare.com' | tail -n1 || true)"
+	echo "Waiting up to 30 seconds for the tunnel URL..."
+	TRY_URL="$(wait_for_quick_tunnel_url read_current_tunnel_journal)" || TRY_URL=""
 	if [ -n "${TRY_URL}" ]; then
 		echo "Ephemeral URL: ${TRY_URL}"
 		echo "${TRY_URL}" > "${RUN_HOME}/trycloudflare_url.txt"
 		${SUDO_CMD} chown "${RUN_USER}:" "${RUN_HOME}/trycloudflare_url.txt" || true
 		echo "Saved to ${RUN_HOME}/trycloudflare_url.txt"
 	else
-		echo "Could not find trycloudflare URL in logs. Run: sudo journalctl -u ${CLOUDFLARED_SERVICE} -f"
+		echo "No tunnel URL detected within 30 seconds. Run: sudo journalctl -u ${CLOUDFLARED_SERVICE} -f"
 	fi
 }
 
@@ -200,13 +227,13 @@ create_cloudflared_cron() {
 	fi
 	echo "Starting cloudflared now (background)..."
 	nohup ${CLOUDFLARED_BIN} tunnel --url "http://localhost:${PORT}" > "${RUN_HOME}/cloudflared.log" 2>&1 &
-	sleep 3
-	TRY_URL="$(grep -oE 'https://[A-Za-z0-9.-]+trycloudflare.com' "${RUN_HOME}/cloudflared.log" | tail -n1 || true)"
+	echo "Waiting up to 30 seconds for the tunnel URL..."
+	TRY_URL="$(wait_for_quick_tunnel_url cat "${RUN_HOME}/cloudflared.log")" || TRY_URL=""
 	if [ -n "${TRY_URL}" ]; then
 		echo "Ephemeral URL: ${TRY_URL}"
 		echo "${TRY_URL}" > "${RUN_HOME}/trycloudflare_url.txt"
 	else
-		echo "Could not find trycloudflare URL in ${RUN_HOME}/cloudflared.log. Tail the log to see output: tail -f ${RUN_HOME}/cloudflared.log"
+		echo "No tunnel URL detected within 30 seconds. Tail the log to see output: tail -f ${RUN_HOME}/cloudflared.log"
 	fi
 }
 
@@ -219,3 +246,7 @@ fi
 echo "Setup complete. If services failed, inspect logs:"
 echo "  sudo journalctl -u ${SERVICE_NAME} -n 200 --no-pager"
 echo "  sudo journalctl -u ${CLOUDFLARED_SERVICE} -n 200 --no-pager"
+
+if [ -n "${TRY_URL:-}" ]; then
+	printf 'Athan URL: %s\n' "${TRY_URL}"
+fi
