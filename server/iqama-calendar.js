@@ -1,10 +1,11 @@
 import { config } from './config.js';
-import { formatDateKey, normalizePrayerName, zonedDateForTime } from './time-utils.js';
+import { formatDateKey, formatClock, normalizePrayerName, zonedDateForTime } from './time-utils.js';
 
 const iqamaPrayers = new Set(['Fajr', 'Duhr', 'Asr', 'Maghrib', 'Isha']);
 
 export async function fetchIqamaTimes(now = new Date()) {
   const response = await fetch(config.iqamaCalendarUrl, {
+    signal: AbortSignal.timeout(15000),
     headers: {
       'user-agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)'
     }
@@ -24,14 +25,23 @@ export function parseIqamaCalendar(calendarText, dateKey, timeZone) {
   const values = {};
 
   for (const prayer of iqamaPrayers) {
-    const candidates = events.filter((event) => event.prayer === prayer && eventOccursOnDate(event, dateKey, timeZone));
+    const candidates = events.flatMap((event) => {
+      if (event.prayer !== prayer || event.status === 'CANCELLED') return [];
+      const date = occurrenceOnDate(event, dateKey, timeZone);
+      if (!date) return [];
+      // An override replaces its original occurrence, including a cancellation
+      // or an occurrence moved to another date.
+      if (!event.recurrenceId && event.uid && events.some((override) =>
+        override.uid === event.uid && override.recurrenceId &&
+        dateForProperty(override.recurrenceId, timeZone)?.getTime() === date.getTime())) return [];
+      return [{ ...event, date }];
+    });
     if (candidates.length === 0) continue;
 
     candidates.sort(compareApplicableEvents);
     const chosen = candidates[0];
-    const label = formatTimeLabel(chosen.dtstart.value);
-    const date = zonedDateForTime(dateKey, label, timeZone);
-    if (!date) continue;
+    const date = chosen.date;
+    const label = formatClock(date, timeZone);
 
     values[prayer] = {
       source: 'Iqama',
@@ -47,7 +57,13 @@ function parseEvents(calendarText) {
   const text = unfoldIcs(calendarText);
   const blocks = text.match(/BEGIN:VEVENT[\s\S]*?END:VEVENT/g) || [];
 
-  return blocks.map(parseEvent).filter(Boolean);
+  const events = blocks.map(parseEvent).filter(Boolean);
+  for (const event of events) {
+    if (!event.prayer && event.recurrenceId && event.uid) {
+      event.prayer = events.find((master) => master.uid === event.uid && !master.recurrenceId)?.prayer;
+    }
+  }
+  return events;
 }
 
 function parseEvent(block) {
@@ -62,7 +78,7 @@ function parseEvent(block) {
     const [key, ...paramParts] = rawKey.split(';');
     const params = Object.fromEntries(paramParts.map((part) => {
       const [paramKey, paramValue = ''] = part.split('=');
-      return [paramKey.toUpperCase(), paramValue];
+      return [paramKey.toUpperCase(), paramValue.replace(/^"|"$/g, '')];
     }));
 
     if (key === 'SUMMARY') {
@@ -92,12 +108,21 @@ function parseEvent(block) {
       continue;
     }
 
+    if (key === 'EXDATE') {
+      event.exdates ??= [];
+      event.exdates.push(...value.split(',').map((item) => ({
+        value: item, isUtc: item.endsWith('Z'), tzid: params.TZID || null
+      })));
+    }
+
+    if (key === 'STATUS') event.status = value.toUpperCase();
+
     if (key === 'UID') {
       event.uid = value;
     }
   }
 
-  return event.prayer && event.dtstart ? event : null;
+  return (event.prayer || event.uid) && (event.dtstart || event.recurrenceId) ? event : null;
 }
 
 function normalizeIqamaPrayerName(raw) {
@@ -115,48 +140,36 @@ function unfoldIcs(text) {
     .replace(/\n[ \t]/g, '');
 }
 
-function eventOccursOnDate(event, dateKey, timeZone) {
-  const recurrenceKey = event.recurrenceId ? dateKeyForProperty(event.recurrenceId, timeZone) : null;
-  if (recurrenceKey) {
-    return recurrenceKey === dateKey;
+function occurrenceOnDate(event, dateKey, timeZone) {
+  if (!event.dtstart) return null;
+  const excluded = (date) => (event.exdates || []).some((property) =>
+    property.value.length === 8
+      ? formatDateKey(date, property.tzid || timeZone) === dateKeyFromRaw(property.value)
+      : dateForProperty(property, timeZone)?.getTime() === date.getTime());
+  if (!event.rrule || event.recurrenceId) {
+    const date = dateForProperty(event.dtstart, timeZone);
+    return date && formatDateKey(date, timeZone) === dateKey && !excluded(date) ? date : null;
   }
-
-  const startKey = dateKeyForProperty(event.dtstart, timeZone);
-  if (!startKey) return false;
-
-  if (!event.rrule) {
-    return startKey === dateKey;
-  }
-
-  if (event.rrule.FREQ !== 'DAILY') {
-    return false;
-  }
-
-  if (dateKey < startKey) {
-    return false;
-  }
-
+  if (event.rrule.FREQ !== 'DAILY') return null;
+  const startKey = dateKeyFromRaw(event.dtstart.value);
   const interval = Number(event.rrule.INTERVAL || 1);
-  const diffDays = daysBetween(startKey, dateKey);
-  if (diffDays % interval !== 0) {
-    return false;
+  if (!Number.isInteger(interval) || interval < 1) return null;
+  // A source-zone date can differ from the requested Vancouver date.
+  for (const shift of [-1, 0, 1]) {
+    const sourceKey = new Date(new Date(`${dateKey}T00:00:00Z`).getTime() + shift * 86400000).toISOString().slice(0, 10);
+    const diffDays = daysBetween(startKey, sourceKey);
+    if (diffDays < 0 || diffDays % interval !== 0) continue;
+    if (event.rrule.COUNT && diffDays / interval >= Number(event.rrule.COUNT)) continue;
+    const property = { ...event.dtstart, value: sourceKey.replaceAll('-', '') + event.dtstart.value.slice(8) };
+    const date = dateForProperty(property, timeZone);
+    if (!date || formatDateKey(date, timeZone) !== dateKey) continue;
+    const until = event.rrule.UNTIL;
+    if (until && (until.endsWith('Z')
+      ? date > dateFromUtcValue(until)
+      : property.value.slice(0, until.length) > until)) continue;
+    if (!excluded(date)) return date;
   }
-
-  if (event.rrule.COUNT) {
-    const occurrenceIndex = diffDays / interval;
-    if (occurrenceIndex >= Number(event.rrule.COUNT)) {
-      return false;
-    }
-  }
-
-  if (event.rrule.UNTIL) {
-    const untilKey = dateKeyForRRuleUntil(event.rrule.UNTIL, timeZone);
-    if (untilKey && dateKey > untilKey) {
-      return false;
-    }
-  }
-
-  return true;
+  return null;
 }
 
 function compareApplicableEvents(left, right) {
@@ -175,24 +188,14 @@ function compareApplicableEvents(left, right) {
   return right.dtstart.value.localeCompare(left.dtstart.value);
 }
 
-function dateKeyForProperty(property, timeZone) {
-  if (!property?.value) return null;
-  if (property.isUtc) {
-    return formatDateKey(dateFromUtcValue(property.value), timeZone);
-  }
-
-  const raw = property.value.slice(0, 8);
-  return `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}`;
+function dateKeyFromRaw(value) {
+  return `${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6, 8)}`;
 }
 
-function dateKeyForRRuleUntil(value, timeZone) {
-  if (!value) return null;
-  if (value.endsWith('Z')) {
-    return formatDateKey(dateFromUtcValue(value), timeZone);
-  }
-
-  const raw = value.slice(0, 8);
-  return `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}`;
+function dateForProperty(property, timeZone) {
+  if (!property?.value || property.value.length < 15) return null;
+  if (property.isUtc) return dateFromUtcValue(property.value);
+  return zonedDateForTime(dateKeyFromRaw(property.value), formatTimeLabel(property.value), property.tzid || timeZone);
 }
 
 function dateFromUtcValue(value) {

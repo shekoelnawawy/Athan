@@ -25,8 +25,22 @@ echo "Port: ${PORT}"
 echo "Run user: ${RUN_USER}"
 
 # Detect tools
-NODE_BIN="$(command -v node || true)"
-NPM_BIN="$(command -v npm || true)"
+# Prefer the user's nvm default even when invoked from an older shell or sudo.
+if [ -z "${NODE_BIN:-}" ] && [ -s "${RUN_HOME}/.nvm/nvm.sh" ]; then
+	NODE_BIN="$(NVM_DIR="${RUN_HOME}/.nvm" bash -c 'source "$NVM_DIR/nvm.sh" --no-use; nvm which default' 2>/dev/null)" || NODE_BIN=""
+fi
+NODE_BIN="${NODE_BIN:-$(command -v node || true)}"
+if [ -z "${NODE_BIN}" ] || ! "${NODE_BIN}" -e '
+const parts = new Intl.DateTimeFormat("en-US", {timeZone:"America/Vancouver",hourCycle:"h23",hour:"2-digit"}).formatToParts(new Date("2026-11-01T23:15:00Z"));
+process.exit(parts.find(p => p.type === "hour").value === "16" ? 0 : 1);
+'; then
+	echo "Node is missing or has outdated Vancouver timezone data. Update Node before running setup."
+	exit 1
+fi
+echo "Node runtime: ${NODE_BIN} ($("${NODE_BIN}" --version))"
+NPM_BIN="$(dirname "${NODE_BIN}")/npm"
+if [ ! -x "${NPM_BIN}" ]; then NPM_BIN="$(command -v npm || true)"; fi
+export PATH="$(dirname "${NODE_BIN}"):${PATH}"
 CLOUDFLARED_BIN="$(command -v cloudflared || true)"
 
 # Install npm deps (if npm available)
@@ -65,7 +79,7 @@ WorkingDirectory=${PROJECT_DIR}
 Environment=NODE_ENV=production
 Environment=PORT=${PORT}
 Environment=PATH=${PATH_ENV}
-ExecStart=/usr/bin/env node server/index.js
+ExecStart="${NODE_BIN}" server/index.js
 Restart=on-failure
 RestartSec=5
 
@@ -75,6 +89,8 @@ EOF
 
 	${SUDO_CMD} systemctl daemon-reload
 	${SUDO_CMD} systemctl enable --now ${SERVICE_NAME}
+	# Apply the selected runtime even if the service was already running.
+	${SUDO_CMD} systemctl restart ${SERVICE_NAME}
 	echo "Node service status:"
 	${SUDO_CMD} systemctl status ${SERVICE_NAME} --no-pager || true
 }

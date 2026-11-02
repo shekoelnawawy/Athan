@@ -4,8 +4,7 @@ import { promises as fs } from 'node:fs';
 import { config } from './config.js';
 import { ensurePushReady, getPublicVapidKey, saveSubscription } from './push.js';
 import { fetchPrayerSchedule } from './scraper.js';
-import { ensureScheduleFresh, startScheduler, tick } from './scheduler.js';
-import { readJson, writeJson } from './storage.js';
+import { ensureScheduleFresh, refreshSchedule, startScheduler, tick } from './scheduler.js';
 
 const app = express();
 
@@ -27,10 +26,7 @@ app.get('/api/times', async (_request, response) => {
 
 app.post('/api/refresh', async (_request, response) => {
   try {
-    const schedule = await fetchPrayerSchedule(new Date());
-    const state = await readJson(config.stateFile, { schedule: null, sentNotificationIds: [] });
-    const sentNotificationIds = state.schedule?.dateKey === schedule.dateKey ? state.sentNotificationIds || [] : [];
-    await writeJson(config.stateFile, { schedule, sentNotificationIds });
+    const { schedule } = await refreshSchedule(new Date());
     await tick(new Date());
     response.json({ ok: true, schedule });
   } catch (error) {

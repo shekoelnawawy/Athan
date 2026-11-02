@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "test": "node --test",
     "dev": "node server/index.js",
     "start": "NODE_ENV=production node server/index.js"
   },

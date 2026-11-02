@@ -35,22 +35,29 @@ export async function saveSubscription(subscription) {
   return deduped;
 }
 
-export async function sendPushToAll(payload) {
+export async function sendPushToAll(payload, { endpoints } = {}) {
   const subscriptions = await readJson(config.subscriptionsFile, []);
-  const survivors = [];
+  const expired = new Set();
+  const failedEndpoints = [];
+  const targets = endpoints ? subscriptions.filter((subscription) => endpoints.includes(subscription.endpoint)) : subscriptions;
 
-  await Promise.all(subscriptions.map(async (subscription) => {
+  await Promise.all(targets.map(async (subscription) => {
     try {
-      await webpush.sendNotification(subscription, JSON.stringify(payload), { TTL: 120 });
-      survivors.push(subscription);
+      await webpush.sendNotification(subscription, JSON.stringify(payload), { TTL: 120, timeout: 10000 });
     } catch (error) {
       const statusCode = error?.statusCode;
       if (statusCode && [404, 410].includes(statusCode)) {
+        expired.add(subscription.endpoint);
         return;
       }
-      survivors.push(subscription);
+      failedEndpoints.push(subscription.endpoint);
+      console.warn(`[push] Delivery failed (${statusCode || error.code || 'network error'}); will retry within the notification grace period`);
     }
   }));
 
-  await writeJson(config.subscriptionsFile, survivors);
+  if (expired.size) {
+    const latest = await readJson(config.subscriptionsFile, []);
+    await writeJson(config.subscriptionsFile, latest.filter((subscription) => !expired.has(subscription.endpoint)));
+  }
+  return { failedEndpoints };
 }

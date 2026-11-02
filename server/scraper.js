@@ -8,6 +8,7 @@ export async function fetchPrayerSchedule(now = new Date()) {
   let bcmaTimes = {};
   let macTimes = {};
   let iqamaTimes = {};
+  const failedSources = [];
 
   try {
     const bcmaHtml = await fetchHtml(config.bcmaUrl);
@@ -16,6 +17,7 @@ export async function fetchPrayerSchedule(now = new Date()) {
       throw new Error('BCMA parser returned no rows');
     }
   } catch (error) {
+    failedSources.push('bcma');
     console.warn(`[scraper] BCMA source unavailable: ${error.message}`);
   }
 
@@ -26,15 +28,14 @@ export async function fetchPrayerSchedule(now = new Date()) {
       throw new Error('MAC parser returned no rows');
     }
   } catch (error) {
+    failedSources.push('mac');
     console.warn(`[scraper] MAC source unavailable: ${error.message}`);
   }
 
   try {
     iqamaTimes = await fetchIqamaTimes(now);
-    if (!hasAnyTimes(iqamaTimes)) {
-      throw new Error('Iqama calendar returned no rows');
-    }
   } catch (error) {
+    failedSources.push('iqama');
     console.warn(`[scraper] Iqama source unavailable: ${error.message}`);
   }
 
@@ -42,7 +43,32 @@ export async function fetchPrayerSchedule(now = new Date()) {
     throw new Error('Unable to load prayer times from BCMA, MAC, and Iqama sources');
   }
 
-  return buildSchedule(dateKey, bcmaTimes, macTimes, iqamaTimes);
+  const schedule = buildSchedule(dateKey, bcmaTimes, macTimes, iqamaTimes);
+  schedule.failedSources = failedSources;
+  // A successfully read calendar may intentionally exclude a prayer today.
+  schedule.missingSources = [...new Set([
+    ...schedule.missingSources.filter((source) => source !== 'iqama'), ...failedSources
+  ])];
+  return schedule;
+}
+
+export function missingScheduleSources(schedule) {
+  return ['bcma', 'mac', 'iqama'].filter((source) =>
+    prayers.filter((prayer) => source !== 'iqama' || prayer !== 'Sunrise').some((prayer) =>
+      !schedule.prayers?.find((row) => row.prayer === prayer)?.[source]?.time));
+}
+
+export function mergeSchedules(previous, next) {
+  if (previous?.dateKey !== next.dateKey) return next;
+  const sources = ['bcma', 'mac', 'iqama'].map((source) => Object.fromEntries(next.prayers.map((row) => [
+    row.prayer, row[source] || ((source !== 'iqama' || next.failedSources?.includes(source))
+      ? previous.prayers?.find((old) => old.prayer === row.prayer)?.[source] : null) || null
+  ])));
+  const merged = buildSchedule(next.dateKey, ...sources);
+  // Continue retrying sources that failed, even if their earlier values survive.
+  merged.missingSources = next.missingSources;
+  merged.failedSources = next.failedSources;
+  return merged;
 }
 
 async function fetchMacMonthlyTimetableHtml(now) {
@@ -62,6 +88,7 @@ async function fetchMacMonthlyTimetableHtml(now) {
 
 async function fetchHtml(url) {
   const response = await fetch(url, {
+    signal: AbortSignal.timeout(15000),
     headers: {
       'user-agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)'
     }
@@ -225,12 +252,14 @@ function buildSchedule(dateKey, bcmaTimes, macTimes, iqamaTimes) {
     ];
   });
 
-  return {
+  const schedule = {
     dateKey,
     lastRefreshedAt: new Date().toISOString(),
     prayers: prayerRows,
     notifications
   };
+  schedule.missingSources = missingScheduleSources(schedule);
+  return schedule;
 }
 
 function buildAthanNotifications(row, dateKey) {
