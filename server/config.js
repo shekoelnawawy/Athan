@@ -17,5 +17,5 @@ export const config = {
   stateFile: path.join(dataDir, 'state.json'),
   vapidFile: path.join(dataDir, 'vapid-keys.json'),
   cutoffHour: 0,
-  cutoffMinute: 5
+  cutoffMinute: 0
 };
