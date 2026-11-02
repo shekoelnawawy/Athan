@@ -1,9 +1,9 @@
-FROM node:22-alpine
+FROM node:24.22.2-alpine
 WORKDIR /app
 COPY package*.json ./
-RUN npm install --omit=dev
+RUN npm ci --omit=dev
 COPY public ./public
 COPY server ./server
-COPY data ./data
+RUN mkdir -p data
 EXPOSE 3000
 CMD ["npm", "start"]
